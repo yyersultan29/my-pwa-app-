@@ -1,5 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getMessaging, getToken, onMessage } from "firebase/messaging";
+import { VAPID_KEY } from "./constants";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBD2oTYCXAOb4eDjMUosDviS80gVzIcoiE",
@@ -13,28 +14,37 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const messaging = getMessaging(app);
 
-export const requestPermission = async () => {
+export const requestNotificationPermission = async () => {
   try {
-    const token = await getToken(messaging, {
-      vapidKey:
-        "BNtg7q0kRIapuWQYO1iZOYFeSRC4CV42piytAt__fFydSsCmyK7bUaT7Hl_b3lirvGqq54QgXPzvGaZ5IaTRz9M",
-    });
+    const permission = await Notification.requestPermission();
+    if (permission === "granted") {
+      // Get FCM token
+      const currentToken = await getToken(messaging, {
+        vapidKey: VAPID_KEY,
+      });
 
-    if (token) {
-      console.log("FCM Token:", token);
-      // Отправь token на сервер для хранения
+      if (currentToken) {
+        console.log("FCM token:", currentToken);
+        return currentToken;
+      } else {
+        console.log("No registration token available");
+        return null;
+      }
     } else {
-      console.log("No registration token available");
+      console.log("Notification permission denied");
+      return null;
     }
   } catch (error) {
-    console.error("Error getting token:", error);
+    console.error("Error getting notification permission:", error);
+    return null;
   }
 };
 
-export const onMessageListener = () =>
-  new Promise((resolve) => {
-    onMessage(messaging, (payload) => {
-      console.log("Message received. ", payload);
-      resolve(payload);
-    });
+export const onForegroundMessage = (callback: (s: unknown) => void) => {
+  return onMessage(messaging, (payload) => {
+    console.log("Message received in foreground:", payload);
+    callback(payload);
   });
+};
+
+export { messaging };
