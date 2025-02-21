@@ -1,11 +1,21 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useEffect, useState } from "react";
+import reactLogo from "./assets/react.svg";
+import viteLogo from "/vite.svg";
+import "./App.css";
+import { onMessageListener, requestPermission } from "./firebase";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [count, setCount] = useState(0);
 
+  useEffect(() => {
+    requestPermission();
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    onMessageListener().then((payload: any) => {
+      console.log("Foreground message:", payload);
+      alert(`New notification: ${payload?.notification?.title}`);
+    });
+  }, []);
   return (
     <>
       <div>
@@ -29,7 +39,7 @@ function App() {
         Click on the Vite and React logos to learn more
       </p>
     </>
-  )
+  );
 }
 
-export default App
+export default App;
